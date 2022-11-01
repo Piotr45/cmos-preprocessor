@@ -1,27 +1,27 @@
-# Opis komponentów
+# Components' description
 
-## Dendryt
+## Dendrite
 
-DENDRYT.sp - układ realizujący wagę.
+- DENDRITE.sp - circuit pursuing the weight.
 
-## Akson
+## Axon
 
-AKSON.sp - układ realizujący funkcję aktywacji.
+- AXON.sp - circuit pursuing the activation function.
 
 ## CMRR
 
-CMRR.sp - TODO
+- CMRR.sp - TODO
 
-## Dioda
+## Diode
 
-DIODA.sp - obciążenie potrzebne np. do symulacji dendrytu i aksonu.
+- DIODE.sp - load needed for simulation.
 
-## Symulacje
+## Simulations
 
-### Wyznaczanie siatki
+### The weights' grid preparation
 
-dendry_sim.sp - przykład symulacji dendrytu tj. procesu wyznaczania siatki wag.
+- dendrite_sim.sp - dendrite's simulation (i.e. the weights' grid preparation).
 
-### Wyznaczanie funkcji aktywacji
+### The activation function's grid preparation
 
-activation_sim.sp - przykład symulacji aksonu tj. procesu wyznaczania funkcji aktywacji.
+- activation_sim.sp - axon's simulation (i.e. the activation function's grid preparation).
