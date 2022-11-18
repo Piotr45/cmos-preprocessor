@@ -11,7 +11,15 @@ def parse_arguments(argv: list[str]) -> argparse.Namespace:
   arg_parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
   arg_parser.add_argument(
-    "--input",
+    "--input-p",
+    type     = str,
+    action   = "store",
+    required = True,
+    help     = ""
+  )
+
+  arg_parser.add_argument(
+    "--input-m",
     type     = str,
     action   = "store",
     required = True,
@@ -36,29 +44,42 @@ def reformat_input(lines: list) -> list:
   return lines[2:-1]
 
 
-def decode_binaries(data: list[tuple, ]) -> list[tuple, ]:
+def inverse_binary(binary: str) -> str:
+  result = ""
+  for bit in binary:
+    if bit == "1":
+      result += "0"
+    else:
+      result += "1"
+  return result
+
+
+def decode_binaries(outm: list[tuple, ], outp: list[tuple, ], _in : int) -> list[tuple, ]:
   binaries = []
-  for time, value in data:
-    binary = str.zfill("{0:b}".format(int(time / FREQ)), 12)
-    binaries.append((binary, value * 10**9))
+  for m, p in zip(outm, outp):
+    binary = str.zfill("{0:b}".format(int(m[0] / FREQ)), 12)
+    binary = inverse_binary(binary)
+    value  = (p[1] - m[1]) / (2 * _in)
+
+    binaries.append(f"{binary}\t{value}\n")
   return binaries
 
 
 def main() -> None:
   args = parse_arguments(sys.argv[1:])
   
-  file_path = pl.Path(args.input)
+  input_m = pl.Path(args.input_m)
+  input_p = pl.Path(args.input_p)
   
-  lines = read_file(file_path)
-  data  = reformat_input(lines)
+  lines_m = read_file(input_m)
+  lines_p = read_file(input_p)
   
-  # 0000 0000 0000 0001 == 0.0005 s
-  # 0000 0000 0000 0010 == 0.001  s
-  # 0000 0000 0000 0011 == 0.0015 s
+  preprocessed_m = reformat_input(lines_m)
+  preprocessed_p = reformat_input(lines_p)
 
-  output = decode_binaries(data)
+  output = decode_binaries(preprocessed_m, preprocessed_p, 10**(-9))
   
-  output_path = file_path.parent / "out.txt"
+  output_path = input_m.parent / "grid.txt"
 
   with open(output_path, 'w') as file:
     for row in output:
