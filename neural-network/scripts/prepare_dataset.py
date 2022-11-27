@@ -1,10 +1,52 @@
+import argparse
 import os
+import sys
 from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
 import wfdb
 from numpy.typing import ArrayLike
+
+
+def parse_arguments(argv: List[str]) -> argparse.Namespace:
+    arg_parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+
+    arg_parser.add_argument(
+        "--ds-dir",
+        type=str,
+        action="store",
+        required=True,
+        help="Directory with ECG data from physionet",
+    )
+
+    arg_parser.add_argument(
+        "--output-file",
+        type=str,
+        action="store",
+        required=True,
+        help="File in which the dataset will be saved",
+    )
+
+    arg_parser.add_argument(
+        "--sample-length",
+        type=int,
+        action="store",
+        required=True,
+        help="The length of a sample's window",
+    )
+
+    arg_parser.add_argument(
+        "--sample-freq",
+        type=int,
+        action="store",
+        required=True,
+        help="Number of sampled points from a window",
+    )
+
+    return arg_parser.parse_args(argv)
 
 
 def _list_all_people(dir: str) -> List[str]:
@@ -84,3 +126,44 @@ def _make_pandas_samples(samples: List[Tuple[ArrayLike, ArrayLike]]) -> pd.DataF
     ]
     combined_pandas_samples = np.vstack(pandas_samples)
     return pd.DataFrame(data=combined_pandas_samples)
+
+
+def main() -> None:
+    args = parse_arguments(sys.argv[1:])
+    ds_dir = args.ds_dir
+
+    if ds_dir[-1] != "/":
+        ds_dir += "/"
+
+    output_file = args.output_file
+    sample_length = args.sample_length
+    sample_freq = args.sample_freq
+
+    if not os.path.isdir(ds_dir):
+        os.mkdir(ds_dir)
+
+    wfdb.dl_database("ecgiddb", ds_dir)
+
+    all_people = _list_all_people(ds_dir)
+    people_record_names = [
+        _list_records_for_person(f"{ds_dir}{person_name}") for person_name in all_people
+    ]
+    people_records_and_annotations = [
+        _read_record_and_annotation(f"{ds_dir}{person_name}", rec_name)
+        for i, person_name in enumerate(all_people)
+        for rec_name in people_record_names[i]
+    ]
+    prepared_people_data = [
+        _prepare_record_data(rec, ann) for (rec, ann) in people_records_and_annotations
+    ]
+    samples = [
+        _make_training_samples(ecg_data, mask, sample_length, sample_freq)
+        for (ecg_data, mask) in prepared_people_data
+    ]
+    pandas_samples = _make_pandas_samples(samples)
+
+    pandas_samples.to_csv(output_file, index=None)
+
+
+if __name__ == "__main__":
+    main()
