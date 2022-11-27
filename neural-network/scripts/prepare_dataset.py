@@ -50,12 +50,30 @@ def parse_arguments(argv: List[str]) -> argparse.Namespace:
 
 
 def _list_all_people(dir: str) -> List[str]:
+    """List all people within  a dataset
+
+    Args:
+        dir (str): directory containing raw data from physionet
+
+    Returns:
+        List[str]: list of people
+    """
     return os.listdir(dir)
 
 
 def _list_records_for_person(person_dir: str) -> List[str]:
+    """List all record names for a given person
+
+    Args:
+        person_dir (str): directory containing records of a given person
+
+    Returns:
+        List[str]: record names
+    """
     all_person_files = os.listdir(person_dir)
-    record_names = list(set([file.split(".")[0] for file in all_person_files]))
+    record_names = list(
+        set([file.split(".")[0] for file in all_person_files])
+    )  # a person's directory contains data files, header files etc which duplicate records' names
 
     return record_names
 
@@ -63,6 +81,15 @@ def _list_records_for_person(person_dir: str) -> List[str]:
 def _read_record_and_annotation(
     person_dir: str, record_name: str
 ) -> Tuple[wfdb.Record, wfdb.Annotation]:
+    """Read record's data and annotation of a given record for a given person
+
+    Args:
+        person_dir (str): directory containing records of a given person
+        record_name (str): record name
+
+    Returns:
+        Tuple[wfdb.Record, wfdb.Annotation]: tuple of record's data and annotation
+    """
     if person_dir[-1] != "/":
         person_dir += "/"
     record = wfdb.rdrecord(f"{person_dir}{record_name}")
@@ -74,14 +101,35 @@ def _read_record_and_annotation(
 def _prepare_record_data(
     record: wfdb.Record, annotation: wfdb.Annotation
 ) -> Tuple[ArrayLike, ArrayLike]:
-    selected_channel = 1 if record.p_signal.shape[1] == 2 else 0
-    ann_points = annotation.sample
-    heartbeat_moments = ann_points.reshape(-1, 2)
-    last_point = int(np.ceil(np.max(ann_points) / 100) * 100)
-    ecg_data = record.p_signal[:last_point, selected_channel]
-    mask = np.zeros(last_point, dtype="int8")
+    """Prepare record data - keep only the data for which annotations are available,
+    create a binary mask
 
-    for (heart_beat_start, heart_beat_end) in heartbeat_moments:
+    Args:
+        record (wfdb.Record): record
+        annotation (wfdb.Annotation): annotation
+
+    Returns:
+        Tuple[ArrayLike, ArrayLike]: tuple of ecg signals and a binary mask
+    """
+    selected_channel = (
+        1 if record.p_signal.shape[1] == 2 else 0
+    )  # select the filtered signal if possible
+    ann_points = annotation.sample
+    heartbeat_moments = ann_points.reshape(
+        -1, 2
+    )  # create (beginning, end) pairs of heartbeat points
+    last_point = int(
+        np.ceil(np.max(ann_points) / 100) * 100
+    )  # find the last point for which an annotation is available and round
+    ecg_data = record.p_signal[
+        :last_point, selected_channel
+    ]  # remove the data without annotations
+    mask = np.zeros(last_point, dtype="int8")  # initialize a binary mask
+
+    for (
+        heart_beat_start,
+        heart_beat_end,
+    ) in heartbeat_moments:  # mark heartbeat moments on a mask
         mask[heart_beat_start:heart_beat_end] = 1
 
     return (ecg_data, mask)
@@ -90,8 +138,22 @@ def _prepare_record_data(
 def _make_training_sample(
     ecg_sample: ArrayLike, mask_sample: ArrayLike, sample_freq: int
 ) -> Tuple[ArrayLike, int]:
-    sampled_points = np.linspace(0, ecg_sample.shape[0] - 1, sample_freq, dtype="int")
-    response = 1 if 1 in mask_sample else 0
+    """Create a vector of length `sample_freq` and corresponding responses.
+    A response is 1 if any value of `mask_sample` is 1. Works on a sample's window
+
+    Args:
+        ecg_sample (ArrayLike): ecg signal window
+        mask_sample (ArrayLike): binary mask window
+        sample_freq (int): number of points sampled from an ecg signal window
+
+    Returns:
+        Tuple[ArrayLike, int]: tuple of a vector of length `sample_freq`
+        and corresponding response
+    """
+    sampled_points = np.linspace(
+        0, ecg_sample.shape[0] - 1, sample_freq, dtype="int"
+    )  # draw `sample_freq` equally spaced points
+    response = 1 if 1 in mask_sample else 0  # determine a response based on the mask
 
     return (ecg_sample[sampled_points], response)
 
@@ -99,8 +161,24 @@ def _make_training_sample(
 def _make_training_samples(
     ecg_data: ArrayLike, mask: ArrayLike, sample_length: int, sample_freq: int
 ) -> Tuple[ArrayLike, ArrayLike]:
-    sample_idx = np.arange(0, ecg_data.shape[0], sample_length)
-    sample_windows = list(zip(sample_idx, sample_idx[1:]))
+    """Apply `_make_training_sample` on a whole record (on all sample windows)
+
+    Args:
+        ecg_data (ArrayLike): ecg signal data of a record
+        mask (ArrayLike): binary mask of a record
+        sample_length (int): length of a sample's window
+        sample_freq (int): number of points in each window
+
+    Returns:
+        Tuple[ArrayLike, ArrayLike]: tuple of vectors of length `sample_freq`
+        and corresponding responses
+    """
+    sample_idx = np.arange(
+        0, ecg_data.shape[0], sample_length
+    )  # split whole signal data into parts
+    sample_windows = list(
+        zip(sample_idx, sample_idx[1:])
+    )  # create sample windows of length `sample_length`
 
     samples_x = np.zeros(shape=(len(sample_windows), sample_freq))
     samples_y = np.zeros(shape=(len(sample_windows)))
@@ -117,10 +195,30 @@ def _make_training_samples(
 
 
 def _make_pandas_sample(samples_x: ArrayLike, samples_y: ArrayLike) -> ArrayLike:
+    """Transform training samples into tabular format - the last field are the responses
+
+    Args:
+        samples_x (ArrayLike): ecg sampled signals
+        samples_y (ArrayLike): responses
+
+    Returns:
+        ArrayLike: vector containing ecg sampled signal data and responses,
+        i.e [sig1, sig2, sig3, ..., sig_n, response]
+    """
     return np.hstack((samples_x, samples_y.reshape(-1, 1)))
 
 
 def _make_pandas_samples(samples: List[Tuple[ArrayLike, ArrayLike]]) -> pd.DataFrame:
+    """Apply `_make_pandas_sample` on all samples
+
+    Args:
+        samples (List[Tuple[ArrayLike, ArrayLike]]): list containing ecg signal windows
+        and responses of all records
+
+    Returns:
+        pd.DataFrame: final dataset, each row contains sampled signal values
+        and a corresponding response
+    """
     pandas_samples = [
         _make_pandas_sample(sample_x, sample_y) for (sample_x, sample_y) in samples
     ]
@@ -129,19 +227,23 @@ def _make_pandas_samples(samples: List[Tuple[ArrayLike, ArrayLike]]) -> pd.DataF
 
 
 def main() -> None:
+    # parse arguments
     args = parse_arguments(sys.argv[1:])
     ds_dir = args.ds_dir
-
-    if ds_dir[-1] != "/":
-        ds_dir += "/"
 
     output_file = args.output_file
     sample_length = args.sample_length
     sample_freq = args.sample_freq
 
+    # standardize the datasource path
+    if ds_dir[-1] != "/":
+        ds_dir += "/"
+
+    # create a datasource directory if doesn't exist
     if not os.path.isdir(ds_dir):
         os.mkdir(ds_dir)
 
+    # download physionet data
     wfdb.dl_database("ecgiddb", ds_dir)
 
     all_people = _list_all_people(ds_dir)
