@@ -44,7 +44,7 @@ def get_datasets(
     X_train, X_val, y_train, y_val = train_test_split(
         X_train,
         y_train,
-        test_size=1 - validation_size / (1 - test_size),
+        train_size=1 - validation_size / (1 - test_size),
         stratify=y_train,
     )
 
