@@ -160,7 +160,7 @@ def _make_training_sample(
         0, ecg_sample.shape[0] - 1, sample_freq, dtype="int"
     )  # draw `sample_freq` equally spaced points
     response = (
-        1 if 1 in mask_sample else 0
+        1 if np.mean(mask_sample) > 0.4 else 0
     )  # determine a response based on the mask
 
     return (ecg_sample[sampled_points], response)
