@@ -12,6 +12,7 @@ def get_datasets(
     validation_size: float = 0.2,
     test_size: float = 0.1,
     batch_size: int = 32,
+    random_state: int = 42,
 ) -> Tuple[tf.data.Dataset]:
     """Converts a whole dataset into train, validation and test sets
        as tf.data.Dataset pipelines
@@ -38,7 +39,7 @@ def get_datasets(
     X, y = dataset.iloc[:, :-1], dataset.iloc[:, -1]
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, stratify=y
+        X, y, test_size=test_size, stratify=y, random_state=random_state
     )
 
     X_train, X_val, y_train, y_val = train_test_split(
@@ -46,6 +47,7 @@ def get_datasets(
         y_train,
         train_size=1 - validation_size / (1 - test_size),
         stratify=y_train,
+        random_state=random_state,
     )
 
     # all features are actually the same feature from different
@@ -66,7 +68,9 @@ def get_datasets(
     )
 
     val_set = (
-        tf.data.Dataset.from_tensor_slices((X_val, y_val)).batch(batch_size).prefetch(3)
+        tf.data.Dataset.from_tensor_slices((X_val, y_val))
+        .batch(batch_size)
+        .prefetch(3)
     )
 
     test_set = (
