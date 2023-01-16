@@ -4,8 +4,8 @@
 .OPTION measfile=1 post=1
 .param vina='0.3v'
 
-.inc 'AXON.spi'
-.inc 'DIODE.SP'
+.inc '../components/AXON.sp'
+.inc '../components/DIODE.sp'
 
 ISOURCE1 in1 0 vina
 ISOURCE2 in2 0 '-vina'

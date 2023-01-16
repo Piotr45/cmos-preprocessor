@@ -46,6 +46,12 @@ def parse_arguments(argv: List[str]) -> argparse.Namespace:
         help="Number of sampled points from a window",
     )
 
+    arg_parser.add_argument(
+        "--download",
+        action="store_true",
+        help="Whether to download database or not",
+    )
+
     return arg_parser.parse_args(argv)
 
 
@@ -153,7 +159,9 @@ def _make_training_sample(
     sampled_points = np.linspace(
         0, ecg_sample.shape[0] - 1, sample_freq, dtype="int"
     )  # draw `sample_freq` equally spaced points
-    response = 1 if 1 in mask_sample else 0  # determine a response based on the mask
+    response = (
+        1 if np.mean(mask_sample) > 0.4 else 0
+    )  # determine a response based on the mask
 
     return (ecg_sample[sampled_points], response)
 
@@ -187,14 +195,18 @@ def _make_training_samples(
         ecg_sample = ecg_data[sample_start:sample_end]
         mask_sample = mask[sample_start:sample_end]
 
-        sample_x, sample_y = _make_training_sample(ecg_sample, mask_sample, sample_freq)
+        sample_x, sample_y = _make_training_sample(
+            ecg_sample, mask_sample, sample_freq
+        )
         samples_x[i] = sample_x
         samples_y[i] = sample_y
 
     return (samples_x, samples_y)
 
 
-def _make_pandas_sample(samples_x: ArrayLike, samples_y: ArrayLike) -> ArrayLike:
+def _make_pandas_sample(
+    samples_x: ArrayLike, samples_y: ArrayLike
+) -> ArrayLike:
     """Transform training samples into tabular format - the last field are the responses
 
     Args:
@@ -208,7 +220,9 @@ def _make_pandas_sample(samples_x: ArrayLike, samples_y: ArrayLike) -> ArrayLike
     return np.hstack((samples_x, samples_y.reshape(-1, 1)))
 
 
-def _make_pandas_samples(samples: List[Tuple[ArrayLike, ArrayLike]]) -> pd.DataFrame:
+def _make_pandas_samples(
+    samples: List[Tuple[ArrayLike, ArrayLike]]
+) -> pd.DataFrame:
     """Apply `_make_pandas_sample` on all samples
 
     Args:
@@ -220,7 +234,8 @@ def _make_pandas_samples(samples: List[Tuple[ArrayLike, ArrayLike]]) -> pd.DataF
         and a corresponding response
     """
     pandas_samples = [
-        _make_pandas_sample(sample_x, sample_y) for (sample_x, sample_y) in samples
+        _make_pandas_sample(sample_x, sample_y)
+        for (sample_x, sample_y) in samples
     ]
     combined_pandas_samples = np.vstack(pandas_samples)
     return pd.DataFrame(data=combined_pandas_samples)
@@ -234,6 +249,7 @@ def main() -> None:
     output_file = args.output_file
     sample_length = args.sample_length
     sample_freq = args.sample_freq
+    download = args.download
 
     # standardize the datasource path
     if ds_dir[-1] != "/":
@@ -244,11 +260,13 @@ def main() -> None:
         os.mkdir(ds_dir)
 
     # download physionet data
-    wfdb.dl_database("ecgiddb", ds_dir)
+    if download:
+        wfdb.dl_database("ecgiddb", ds_dir)
 
     all_people = _list_all_people(ds_dir)
     people_record_names = [
-        _list_records_for_person(f"{ds_dir}{person_name}") for person_name in all_people
+        _list_records_for_person(f"{ds_dir}{person_name}")
+        for person_name in all_people
     ]
     people_records_and_annotations = [
         _read_record_and_annotation(f"{ds_dir}{person_name}", rec_name)
@@ -256,7 +274,8 @@ def main() -> None:
         for rec_name in people_record_names[i]
     ]
     prepared_people_data = [
-        _prepare_record_data(rec, ann) for (rec, ann) in people_records_and_annotations
+        _prepare_record_data(rec, ann)
+        for (rec, ann) in people_records_and_annotations
     ]
     samples = [
         _make_training_samples(ecg_data, mask, sample_length, sample_freq)
