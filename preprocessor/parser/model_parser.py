@@ -123,7 +123,7 @@ class ModelParser:
                 wg = [w[i] for w in weights]
 
             for j, weight in enumerate(wg):
-                prefix = f"xDENDRYTw{n}n{i}d{j}"
+                prefix = f"xDENDRITEw{n}n{i}d{j}"
                 if weight < 0 and is_output_layer:
                     inputs = " ".join(reversed(self._current_mirrors[j]))
                 elif weight < 0 and not is_output_layer:
@@ -138,7 +138,7 @@ class ModelParser:
                 code = self._find_closest_weight(self._grid, weight)
                 weight_vector = " ".join(self._parse_bit_word(code))
 
-                suffix = "VSS VDD DENDRYT\n"
+                suffix = "VSS VDD DENDRITE\n"
                 res.append(" ".join([prefix, inputs, outputs, weight_vector, suffix]))
             result += res
             result.append("\n")
@@ -186,7 +186,7 @@ class ModelParser:
         """
         result = []
         for i in range(layer_size):
-            axon = f"xAKSONw{n}n{i} OUTpw{n}_n{i} OUTmw{n}_n{i} OUTp_w{n}n{i} OUTm_w{n}n{i} VSS VDD AKSON\n"
+            axon = f"xAXONw{n}n{i} OUTpw{n}_n{i} OUTmw{n}_n{i} OUTp_w{n}n{i} OUTm_w{n}n{i} VSS VDD AXON\n"
             result.append(axon)
         result.append("\n")
         return result
