@@ -161,3 +161,9 @@ cython_debug/
 
 dataset/
 *.ipynb
+models/
+tensorboard_log/
+*.csv
+*.pkl
+*.h5
+*.png
