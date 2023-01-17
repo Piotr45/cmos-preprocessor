@@ -13,13 +13,6 @@ Mp7a outp_p outp1 vdd vdd pch w=5.7u l=14.4u
 Mn8a outp outp1 outp_n vss nch w=0.14u l=14.4u
 Mp9a outp outp1 outp_p vdd pch w=5.7u l=14.4u
 
-*inwerter wyjscoiwy po zaprojektowaniu w test
-*Mn6 outp_n in vss vss nch w=0.14u l=7.8u
-*Mp7 outp_p in vdd vdd pch w=4.05u l=2.705u
-*Mn6 out in outp_n vss nch w=0.14u l=7.8u
-*Mp7 out in outp_p vdd pch w=4.05u l=2.705u
-
-
 *INM
 Mn0b inm inm vss vss nch w=0.265u l=5.535u 
 Mp0b inm inm vdd vdd pch w=2.075u l=5.535u 
