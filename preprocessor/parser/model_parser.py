@@ -4,10 +4,12 @@ import numpy as np
 class ModelParser:
     """Parser class, that converts TensorFlow model to spice component"""
 
-    def __init__(self, neural_network: np.array, grid: dict[str, float]) -> None:
+    def __init__(
+        self, neural_network: np.array, grid: dict[str, float]
+    ) -> None:
         self._input_size: int = len(neural_network[0])
         self._input: np.array = neural_network[0]
-        self._output: np.array = neural_network[-1].reshape((1, -1))
+        self._output: np.array = neural_network[-1]
         self._grid: dict = grid
         self._current_mirrors: list = []
         return
@@ -22,7 +24,9 @@ class ModelParser:
         # Init inputs and outputs of preprocessor
         result = []
         current_inputs = [f"IN{i}p IN{i}m" for i in range(self._input_size)]
-        preprocessor_outputs = [f"OUT{i}p OUT{i}m" for i in range(len(self._output))]
+        preprocessor_outputs = [
+            f"OUT{i}p OUT{i}m" for i in range(len(self._output[0]))
+        ]
 
         # Create file preamble
         includes = f"*** PREPROCESSOR\n.INCLUDE components/AXON.sp\n.INCLUDE components/DENDRITE.sp\n.INCLUDE components/CMRR.sp\n\n"
@@ -56,16 +60,20 @@ class ModelParser:
             List[str]: neural network layer structure for preprocessor circuit
         """
         result = []
-        layer_size = len(weights)
+        layer_size = len(weights[0])
 
         # Create multiplying blocks
-        result += self._generate_dendrite_component(weights, n, preprocessor_outputs)
+        result += self._generate_dendrite_component(
+            weights, n, preprocessor_outputs
+        )
 
         # Create activation blocks and link them with multiplying blocks
         result += self._generate_axon_component(layer_size, n)
 
         # Create CMRR blocks and link them with activation functions
-        result += self._generate_cmrr_component(layer_size, n, preprocessor_outputs)
+        result += self._generate_cmrr_component(
+            layer_size, n, preprocessor_outputs
+        )
 
         return result
 
@@ -112,20 +120,20 @@ class ModelParser:
             List[str]: spice code structure for dendrite components
         """
         result = []
-        layer_size = len(weights)
+        layer_size = len(weights[0])
 
         # Create multiplying blocks
         for i in range(layer_size):
             res = []
             if is_output_layer:
-                wg = weights[i]
+                wg = weights
             else:
                 wg = [w[i] for w in weights]
 
             for j, weight in enumerate(wg):
                 prefix = f"xDENDRITEw{n}n{i}d{j}"
                 if weight < 0 and is_output_layer:
-                    inputs = " ".join(reversed(self._current_mirrors[j]))
+                    inputs = " ".join(self._current_mirrors[j])
                 elif weight < 0 and not is_output_layer:
                     inputs = " ".join(reversed(self._current_mirrors[j][i]))
                 elif weight >= 0 and is_output_layer:
@@ -135,11 +143,13 @@ class ModelParser:
 
                 outputs = f"OUTmw{n}_n{i} OUTpw{n}_n{i}"
 
-                code = self._find_closest_weight(self._grid, weight)
+                code = self._find_closest_weight(self._grid, abs(weight))
                 weight_vector = " ".join(self._parse_bit_word(code))
 
                 suffix = "VSS VDD DENDRITE\n"
-                res.append(" ".join([prefix, inputs, outputs, weight_vector, suffix]))
+                res.append(
+                    " ".join([prefix, inputs, outputs, weight_vector, suffix])
+                )
             result += res
             result.append("\n")
         return result
@@ -165,7 +175,9 @@ class ModelParser:
                 cmrr = f"xCMRRw{n}n{i} OUTp_w{n}n{i} OUTm_w{n}n{i} {outp} {outm} VSS VDD CMRR\n"
             else:
                 cmrr = f"xCMRRw{n}n{i} OUTp_w{n}n{i} OUTm_w{n}n{i} INw2p_n{n+1}p{i} INw2m_n{n+1}p{i} VSS VDD CMRR\n"
-                current_mirrors.append((f"INw2p_n{n+1}p{i}", f"INw2m_n{n+1}p{i}"))
+                current_mirrors.append(
+                    (f"INw2p_n{n+1}p{i}", f"INw2m_n{n+1}p{i}")
+                )
             result.append(cmrr)
         result.append("\n")
 
@@ -209,11 +221,11 @@ class ModelParser:
 
         cm_name = f"CM{size}"
         cm_outputs = " ".join([f"OUT{i}" for i in range(1, size + 1)])
-        preamble = f".subckt {cm_name} IN {cm_outputs} VSS VDD"
+        preamble = f".subckt {cm_name} IN {cm_outputs} VSS VDD\n"
 
         result.append(preamble)
         result.append(
-            f"Mn0 IN IN VSS VSS NCH W=0.265u L=0.835u\nMp0 IN IN VDD VDD PCH W=2.075u L=0.835u"
+            f"Mn0 IN IN VSS VSS NCH W=0.265u L=0.835u\nMp0 IN IN VDD VDD PCH W=2.075u L=0.835u\n"
         )
 
         for i in range(1, size + 1):
