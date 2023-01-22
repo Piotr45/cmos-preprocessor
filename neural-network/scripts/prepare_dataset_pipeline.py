@@ -53,13 +53,14 @@ def get_datasets(
     # all features are actually the same feature from different
     # timestamps
 
-    X_train_flattened = X_train.values.reshape(-1, 1)
-    scaler.fit(X_train_flattened)
+    if scaler is not None:
+        X_train_flattened = X_train.values.reshape(-1, 1)
+        scaler.fit(X_train_flattened)
 
-    for col in X_train.columns:
-        X_train[[col]] = scaler.transform(X_train[[col]])
-        X_val[[col]] = scaler.transform(X_val[[col]])
-        X_test[[col]] = scaler.transform(X_test[[col]])
+        for col in X_train.columns:
+            X_train[[col]] = scaler.transform(X_train[[col]])
+            X_val[[col]] = scaler.transform(X_val[[col]])
+            X_test[[col]] = scaler.transform(X_test[[col]])
 
     train_set = (
         tf.data.Dataset.from_tensor_slices((X_train, y_train))
