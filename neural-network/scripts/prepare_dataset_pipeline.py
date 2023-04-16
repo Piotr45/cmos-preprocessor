@@ -1,19 +1,22 @@
-from typing import Any, Tuple
+from pathlib import Path
+from typing import Any, Optional, Tuple, Union
 
+import numpy as np
 import pandas as pd
 import tensorflow as tf
 from sklearn.base import TransformerMixin
 from sklearn.model_selection import train_test_split
-from tensorflow.python.data.ops.dataset_ops import DatasetV1Adapter
 
 
 def get_datasets(
     dataset: pd.DataFrame,
-    scaler: TransformerMixin,
+    scaler: Optional[TransformerMixin],
     validation_size: float = 0.2,
     test_size: float = 0.1,
     batch_size: int = 32,
     random_state: int = 42,
+    save_test_set: bool = False,
+    saving_path: Optional[Union[str, Path]] = None,
 ) -> tuple[Any, Any, Any]:
     """Converts a whole dataset into train, validation and test sets
        as tf.data.Dataset pipelines
@@ -34,6 +37,11 @@ def get_datasets(
         training. Defaults to 32.
 
         random_state (int, optional): random state
+
+        save_test_set (int): whether to save the test set
+
+        saving_path (str, Path, optional): the path where to save the
+        test set
 
     Returns:
         Tuple[tf.data.Dataset]: a tuple containing train, validation
@@ -64,6 +72,11 @@ def get_datasets(
             X_train[[col]] = scaler.transform(X_train[[col]])
             X_val[[col]] = scaler.transform(X_val[[col]])
             X_test[[col]] = scaler.transform(X_test[[col]])
+
+    if save_test_set:
+        test_set = np.hstack((X_test.values, y_test.values.reshape(-1, 1)))
+        test_set_df = pd.DataFrame(data=test_set)
+        test_set_df.to_csv(saving_path, index=False)
 
     train_set = (
         tf.data.Dataset.from_tensor_slices((X_train, y_train))
