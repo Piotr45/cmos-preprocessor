@@ -101,7 +101,7 @@ def _read_record_and_annotation(
     record = wfdb.rdrecord(f"{person_dir}{record_name}")
     annotation = wfdb.rdann(f"{person_dir}{record_name}", extension="atr")
 
-    return (record, annotation)
+    return record, annotation
 
 
 def _prepare_record_data(
@@ -138,7 +138,7 @@ def _prepare_record_data(
     ) in heartbeat_moments:  # mark heartbeat moments on a mask
         mask[heart_beat_start:heart_beat_end] = 1
 
-    return (ecg_data, mask)
+    return ecg_data, mask
 
 
 def _make_training_sample(
@@ -163,7 +163,7 @@ def _make_training_sample(
         1 if np.mean(mask_sample) > 0.4 else 0
     )  # determine a response based on the mask
 
-    return (ecg_sample[sampled_points], response)
+    return ecg_sample[sampled_points], response
 
 
 def _make_training_samples(
@@ -201,7 +201,7 @@ def _make_training_samples(
         samples_x[i] = sample_x
         samples_y[i] = sample_y
 
-    return (samples_x, samples_y)
+    return samples_x, samples_y
 
 
 def _make_pandas_sample(

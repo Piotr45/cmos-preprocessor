@@ -1,9 +1,10 @@
-from typing import Tuple
+from typing import Any, Tuple
 
 import pandas as pd
 import tensorflow as tf
 from sklearn.base import TransformerMixin
 from sklearn.model_selection import train_test_split
+from tensorflow.python.data.ops.dataset_ops import DatasetV1Adapter
 
 
 def get_datasets(
@@ -13,7 +14,7 @@ def get_datasets(
     test_size: float = 0.1,
     batch_size: int = 32,
     random_state: int = 42,
-) -> Tuple[tf.data.Dataset]:
+) -> tuple[Any, Any, Any]:
     """Converts a whole dataset into train, validation and test sets
        as tf.data.Dataset pipelines
 
@@ -31,6 +32,8 @@ def get_datasets(
 
         batch_size (int, optional): the size of the batch during
         training. Defaults to 32.
+
+        random_state (int, optional): random state
 
     Returns:
         Tuple[tf.data.Dataset]: a tuple containing train, validation
@@ -80,4 +83,4 @@ def get_datasets(
         .prefetch(3)
     )
 
-    return (train_set, val_set, test_set)
+    return train_set, val_set, test_set

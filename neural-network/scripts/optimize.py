@@ -6,9 +6,10 @@ from shutil import rmtree
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from sklearn.preprocessing import MinMaxScaler
+
 from activation_function import custom_sigmoid
 from prepare_dataset_pipeline import get_datasets
-from sklearn.preprocessing import MinMaxScaler
 
 
 def build_model(hidden_neurons: int, l2_rate: float) -> tf.keras.Model:
@@ -99,7 +100,7 @@ def fit_model(
     print(f"{'#'*10} Test after change evaluation {'#'*10}")
     test_eval_after_change = model.evaluate(test_set, return_dict=True)
 
-    return (model, history, val_eval, test_eval, test_eval_after_change)
+    return model, history, val_eval, test_eval, test_eval_after_change
 
 
 if __name__ == "__main__":
