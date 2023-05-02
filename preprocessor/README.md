@@ -1,20 +1,12 @@
-# Components' description
+# CMOS preprocessor
 
-## Dendrite
+## Components' description
 
 - DENDRITE.sp - circuit pursuing the weight.
-
-## Axon
-
 - AXON.sp - circuit pursuing the activation function.
-
-## CMRR
-
-- CMRR.sp - TODO
-
-## Diode
-
+- CMRR.sp - common mode rejection ratio.
 - DIODE.sp - load needed for simulation.
+- PREPROCESSOR.sp - preprocessor circuit.
 
 ## Simulations
 
