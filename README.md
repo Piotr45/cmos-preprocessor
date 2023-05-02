@@ -33,6 +33,17 @@ CMOS simulation tools, that are required:
 ### Installing
 
 A step by step series of examples that tell you how to get a development env running.
+All the installation steps are being handled by the [requirements](requirements.txt). You can use venv by typing:
+
+```
+$ python -m venv venv
+```
+
+Activate venv and install requierments.
+
+```
+$ pip install -r requirements.txt
+``` 
 
 ## Running the code
 
