@@ -58,12 +58,13 @@ def decode_binaries(
 ) -> list[tuple,]:
     binaries = []
     for m, p in zip(outm, outp):
-        binary = str.zfill("{0:b}".format(round(m[0] / FREQ)), 12)
-        binary = inverse_binary(binary)
+        binary = str.zfill("{0:b}".format(round(m[0] / FREQ) - 1), 12)[::-1]
+        # binary = f"{round(m[0] / FREQ) - 1} {binary}"
+        # binary = inverse_binary(binary)[::-1]
         value = (p[1] - m[1]) / (2 * _in)
 
         binaries.append(f"{binary}\t{value}\n")
-    return binaries
+    return binaries[1:]
 
 
 def main() -> None:
@@ -80,10 +81,12 @@ def main() -> None:
 
     output = decode_binaries(preprocessed_m, preprocessed_p, 10 ** (-9))
 
-    output_path = input_m.parent / "grid.txt"
+    # output = sorted(output)[::-1]
+
+    output_path = input_m.parent / "grid6.txt"
 
     with open(output_path, "w") as file:
-        for row in output[:-1]:
+        for row in output:
             file.write(f"{row}")
 
 
