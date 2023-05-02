@@ -3,8 +3,16 @@ import pickle
 import argparse
 import numpy as np
 
+import keras.backend as K
+from keras.utils import get_custom_objects
+
 from model_parser import ModelParser
 
+
+def custom_sigmoid(x):
+    return 2 * K.sigmoid(37 * x) - 1
+
+get_custom_objects()["custom_sigmoid"] = custom_sigmoid
 
 def parse_arguments(argv: list[str]) -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
@@ -32,7 +40,8 @@ def parse_arguments(argv: list[str]) -> argparse.Namespace:
 
 def load_model(path: str) -> np.array:
     with open(path, "rb") as file:
-        return pickle.load(file)
+        data = pickle.load(file)
+        return data["weights"]
 
 
 def load_grid(path: str) -> list:

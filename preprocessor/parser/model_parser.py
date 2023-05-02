@@ -7,8 +7,9 @@ class ModelParser:
     def __init__(
         self, neural_network: np.array, grid: dict[str, float]
     ) -> None:
-        self._input_size: int = len(neural_network[0])
-        self._input: np.array = neural_network[0]
+        self._input: np.array = neural_network[0].T
+        self._hidden_neurons: int = self._input.shape[0]
+        self._input_size: int = self._input.shape[1]
         self._output: np.array = neural_network[-1]
         self._grid: dict = grid
         self._current_mirrors: list = []
@@ -23,7 +24,7 @@ class ModelParser:
 
         # Init inputs and outputs of preprocessor
         result = []
-        current_inputs = [f"IN{i}p IN{i}m" for i in range(self._input_size)]
+        current_inputs = [f"IN{i}p IN{i}m" for i in range(self._input.shape[1])]
         preprocessor_outputs = [
             f"OUT{i}p OUT{i}m" for i in range(len(self._output[0]))
         ]
@@ -37,13 +38,13 @@ class ModelParser:
         # Create preprocessor structure
         result += self._generate_current_mirrors(current_inputs)
         result += self._create_layer(self._input, 0)
-        result += self._create_layer(self._output, 1, preprocessor_outputs)
+        result += self._create_layer([self._output], 1, preprocessor_outputs)
 
         # End preprocessor structure
         result.append(f".ends PREPROCESSOR\n\n")
 
         # Create CM component structure
-        result += self._generate_cm_component(self._input_size)
+        result += self._generate_cm_component(self._hidden_neurons)
 
         return "".join(result)
 
@@ -60,7 +61,7 @@ class ModelParser:
             List[str]: neural network layer structure for preprocessor circuit
         """
         result = []
-        layer_size = len(weights[0])
+        layer_size = len(weights)
 
         # Create multiplying blocks
         result += self._generate_dendrite_component(
@@ -91,11 +92,11 @@ class ModelParser:
         for i in range(self._input_size):
             inp, inm = current_inputs[i].split(" ")
 
-            outs_p = [f"OUTn_n{j}p{i}" for j in range(self._input_size)]
-            outs_m = [f"OUTp_n{j}p{i}" for j in range(self._input_size)]
+            outs_p = [f"OUTn_n{j}p{i}" for j in range(self._hidden_neurons)]
+            outs_m = [f"OUTp_n{j}p{i}" for j in range(self._hidden_neurons)]
 
-            cmp = f"xCMp_{i} {inp} {' '.join(outs_p)} VSS VDD CM{self._input_size}\n"
-            cmm = f"xCMm_{i} {inm} {' '.join(outs_m)} VSS VDD CM{self._input_size}\n"
+            cmp = f"xCMp_{i} {inp} {' '.join(outs_p)} VSS VDD CM{self._hidden_neurons}\n"
+            cmm = f"xCMm_{i} {inm} {' '.join(outs_m)} VSS VDD CM{self._hidden_neurons}\n"
 
             result.append(cmp)
             result.append(cmm)
@@ -120,24 +121,21 @@ class ModelParser:
             List[str]: spice code structure for dendrite components
         """
         result = []
-        layer_size = len(weights[0])
-
+        layer_size = len(weights)
         # Create multiplying blocks
         for i in range(layer_size):
             res = []
-            if is_output_layer:
-                wg = weights
-            else:
-                wg = [w[i] for w in weights]
+
+            wg = weights[i]
 
             for j, weight in enumerate(wg):
                 prefix = f"xDENDRITEw{n}n{i}d{j}"
                 if weight < 0 and is_output_layer:
                     inputs = " ".join(self._current_mirrors[j])
-                elif weight < 0 and not is_output_layer:
-                    inputs = " ".join(reversed(self._current_mirrors[j][i]))
                 elif weight >= 0 and is_output_layer:
-                    inputs = " ".join(reversed(self._current_mirrors[j]))
+                    inputs = " ".join(self._current_mirrors[j][::-1])
+                elif weight < 0 and not is_output_layer:
+                    inputs = " ".join(self._current_mirrors[j][i][::-1])
                 else:
                     inputs = " ".join(self._current_mirrors[j][i])
 
@@ -151,6 +149,10 @@ class ModelParser:
                     " ".join([prefix, inputs, outputs, weight_vector, suffix])
                 )
             result += res
+            if not is_output_layer:
+                result.append("\n")
+        
+        if is_output_layer:
             result.append("\n")
         return result
 
