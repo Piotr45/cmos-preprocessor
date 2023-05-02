@@ -93,11 +93,9 @@ if __name__ == "__main__":
     dataset_path = args.dataset
     samples_dir = args.pred_dir
     all_frequency_paths = os.listdir(samples_dir)
-    print(all_frequency_paths)
     all_frequency_values = [
         int(freq.split("_")[-1]) for freq in all_frequency_paths
     ]
-    print(all_frequency_values)
     all_frequency_y_true = {
         freq_val: read_true_values(dataset_path, freq_val)
         for freq_val in all_frequency_values
