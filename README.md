@@ -40,7 +40,7 @@ In order to run the code, you will only need to prepare two files, multiplicatio
 
 **prepare_dataset_pipeline.py**
 
-```bash
+```
 $ python prepare_dataset.py -h
 usage: prepare_dataset.py [-h] --ds-dir DS_DIR --output-file OUTPUT_FILE --sample-length SAMPLE_LENGTH --sample-freq SAMPLE_FREQ [--download]
 
@@ -50,7 +50,7 @@ options:
   --output-file OUTPUT_FILE
                         File in which the dataset will be saved (default: None)
   --sample-length SAMPLE_LENGTH
-                        The length of a sample`s window (default: None)
+                        The length of a sample's window (default: None)
   --sample-freq SAMPLE_FREQ
                         Number of sampled points from a window (default: None)
   --download            Whether to download database or not (default: False)
@@ -60,7 +60,7 @@ options:
 
 Now, in order to run the code you can call the parse_model.py directly.
 
-```bash
+```
 $ python parse_model.py -h
 usage: parse_model.py [-h] --model MODEL --grid GRID
 
