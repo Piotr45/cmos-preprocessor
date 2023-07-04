@@ -111,10 +111,10 @@ def calculate_stats(preprocessor_path: str) -> None:
     )
 
     transisors_num = _calculate_transistors_num(
-        current_mirror_size, cmrrs, dendrites, axons, current_mirrors
+        cmrrs, dendrites, axons, current_mirrors, current_mirror_size
     )
     active_area = _calculate_active_area(
-        current_mirror_size, cmrrs, dendrites, axons, current_mirrors
+        cmrrs, dendrites, axons, current_mirrors, current_mirror_size
     )
 
     print(
