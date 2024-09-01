@@ -1,0 +1,6 @@
+FROM tensorflow/tensorflow:2.13.0-gpu
+WORKDIR /cmos-preprocessor
+RUN apt-get update
+COPY requirements-tensorflow.txt requirements-tensorflow.txt
+RUN pip install -r requirements-tensorflow.txt
+ENTRYPOINT [ "/bin/bash" ]
