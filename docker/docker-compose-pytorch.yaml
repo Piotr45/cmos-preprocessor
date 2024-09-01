@@ -1,0 +1,20 @@
+version: "1.0"
+services:
+  cmos-preprocessor-pytorch:
+    container_name: cmos-preprocessor-pytorch
+    environment:
+      - PYTHONPATH=/cmos-preprocessor/
+    build:
+      dockerfile: DockerfilePyTorch
+    volumes:
+      - ../:/cmos-preprocessor
+    tty: true
+    stdin_open: true
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    entrypoint: /bin/bash
