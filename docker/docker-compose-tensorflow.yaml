@@ -1,0 +1,20 @@
+version: "1.0"
+services:
+  cmos-preprocessor-tensorflow:
+    container_name: cmos-preprocessor-tensorflow
+    environment:
+      - PYTHONPATH=/cmos-preprocessor/
+    build:
+      dockerfile: DockerfileTensorflow
+    volumes:
+      - ../:/cmos-preprocessor
+    tty: true
+    stdin_open: true
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    entrypoint: /bin/bash
