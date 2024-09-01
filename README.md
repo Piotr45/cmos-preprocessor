@@ -33,16 +33,24 @@ CMOS simulation tools, that are required:
 ### Installing
 
 A step by step series of examples that tell you how to get a development env running.
-All the installation steps are being handled by the [requirements](requirements.txt). You can use venv by typing:
+All the installation steps are being handled by the appropriate docker-compose file:
+
+#### PyTorch
+
+TODO
+
+#### Tensorflow
+
+Start the container:
 
 ```
-$ python -m venv venv
+$ docker compose -f docker/docker-compose-tensorflow.yaml up -d
 ```
 
-Activate venv and install requierments.
+Enter the container:
 
 ```
-$ pip install -r requirements.txt
+$ docker exec -it cmos-preprocessor-tensorflow bash
 ``` 
 
 ## Running the code
