@@ -37,7 +37,17 @@ All the installation steps are being handled by the appropriate docker-compose f
 
 #### PyTorch
 
-TODO
+Start the container:
+
+```
+$ docker compose -f docker/docker-compose-pytorch.yaml up -d
+```
+
+Enter the container:
+
+```
+$ docker exec -it cmos-preprocessor-pytorch bash
+``` 
 
 #### Tensorflow
 
